@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:1.77.2
+    restart: always
+    environment:
+      # *** General ***
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      - NODE_ENV=production
+      # *** Settings ***
+      - N8N_SECURE_COOKIE=false
+      #- N8N_BASIC_AUTH_USER=admin
+      #- N8N_BASIC_AUTH_PASSWORD=password
+      #- N8N_HOST=n8n.example.com
+      #- VUE_APP_URL_BASE_API=https://${N8N_HOST}
+      #- N8N_PORT=5678
+      #- N8N_PROTOCOL=https
+      #- WEBHOOK_URL=https://${N8N_HOST}
+    ports:
+      - 5678:5678
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+
+volumes:
+  n8n-data:

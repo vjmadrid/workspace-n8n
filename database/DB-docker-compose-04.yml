@@ -1,0 +1,48 @@
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    networks: ['demo']
+    env_file:
+      - ./config/db/db.example.env
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_NON_ROOT_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:1.77.2
+    restart: always
+    networks: ['demo']
+    env_file:
+      - ./config/n8n/n8n.example2.env
+    ports:
+      - 5678:5678
+    links:
+      - postgres
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Generate self-sign and proxy from cloudflare
+    labels:
+      - traefik.http.routers.n8n.service=n8n
+      - traefik.http.routers.n8n.rule=Host(`n8n.example.com`)
+      - traefik.http.routers.n8n.tls=true
+      - traefik.http.services.n8n.loadbalancer.server.port=5678
+
+volumes:
+  db-data:
+  n8n-data:
+
+networks:
+  demo:
+    driver: bridge

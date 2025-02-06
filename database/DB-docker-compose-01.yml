@@ -1,0 +1,58 @@
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    networks: ['demo']
+    environment:
+      # *** Settings ***
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=n8ndb
+      - POSTGRES_NON_ROOT_USER=n8n
+      - POSTGRES_NON_ROOT_PASSWORD=n8n
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U n8n -d n8ndb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:1.77.2
+    restart: always
+    networks: ['demo']
+    environment:
+      # *** General ***
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      # *** Settings ***
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      # *** Database ***
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+    ports:
+      - 5678:5678
+    links:
+      - postgres
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  n8n-data:
+
+networks:
+  demo:
+    driver: bridge
