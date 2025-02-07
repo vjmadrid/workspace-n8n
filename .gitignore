@@ -1,12 +1,12 @@
 *.env
 
-**/basic/n8n-data/*
-**/basic/caddy-data/*
+basic/n8n-data/*
+basic/caddy-data/*
 
-**/database/n8n-data/*
-**/database/db-data/*
-**/database/pgadmin-data/*
+database/n8n-data/*
+database/db-data/*
+database/pgadmin-data/*
 
-**/redis/n8n-data/*
-**/redis/db-data/*
-**/redis/redis-data/*
+redis/n8n-data/*
+redis/db-data/*
+redis/redis-data/*
