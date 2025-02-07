@@ -1,2 +1,2 @@
-{"__type":"$$EventMessage","id":"e3802130-1bf5-4e87-933c-a1a2e66d7302","ts":"2025-02-06T18:56:58.232+01:00","eventName":"n8n.worker.started","message":"n8n.worker.started","payload":{"workerId":"worker-k7OC603tfDSso7Mz"}}
-{"__type":"$$EventMessageConfirm","confirm":"e3802130-1bf5-4e87-933c-a1a2e66d7302","ts":"2025-02-06T18:56:58.233+01:00","source":{"id":"0","name":"eventBus"}}
+{"__type":"$$EventMessage","id":"5894caea-40fd-4e16-a6ca-c747993166de","ts":"2025-02-07T09:42:07.098+01:00","eventName":"n8n.worker.started","message":"n8n.worker.started","payload":{"workerId":"worker-jV4efsBTpyEhi4aC"}}
+{"__type":"$$EventMessageConfirm","confirm":"5894caea-40fd-4e16-a6ca-c747993166de","ts":"2025-02-07T09:42:07.099+01:00","source":{"id":"0","name":"eventBus"}}

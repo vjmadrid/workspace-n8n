@@ -1,0 +1,87 @@
+
+x-shared: &shared
+  image: n8nio/n8n:1.77.2
+  restart: always
+  networks: ['demo']
+  env_file:
+    - ./config/n8n/n8n.example3.env
+  links:
+    - postgres
+    - redis
+  volumes:
+    - ./n8n-data:/home/node/.n8n
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  https-portal:
+    image: steveltn/https-portal:1.24.2
+    restart: always
+    networks: ['demo']
+    ports:
+      - '80:80'
+      - '443:443'
+    links:
+      - n8n_app
+    environment:
+      DOMAINS: 'n8n.example.com -> http://n8n_app:5678'
+      STAGE: ${STAGE:-staging}
+      FORCE_RENEW: 'true'
+      CUSTOM_NGINX_SERVER_CONFIG_BLOCK: |
+          proxy_buffering off;
+
+  postgres:
+    image: postgres:16
+    restart: always
+    networks: ['demo']
+    env_file:
+      - ./config/db/db.example2.env
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U n8n -d n8ndb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.2.7-alpine
+    restart: always
+    networks: ['demo']
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n_app:
+    <<: *shared
+    networks: ['demo']
+    #ports:
+    #  - 5678:5678
+
+  n8n_app_worker:
+    <<: *shared
+    networks: ['demo']
+    command: worker
+    depends_on:
+      - n8n_app
+
+volumes:
+  db-data:
+  n8n-data:
+  redis-data:
+
+networks:
+  demo:
+    driver: bridge
