@@ -1,0 +1,148 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: n8n-postgres
+    restart: unless-stopped
+    networks: ['demo']
+    env_file:
+      - ./config/db/db.example.env
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  n8n-server:
+    image: n8nio/n8n:1.77.3
+    container_name: n8n-server
+    restart: unless-stopped
+    networks: ['demo']
+    ports:
+      - 5678:5678
+    environment:
+      # *** General ***
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      - N8N_ENCRYPTION_KEY=MaGBhlks6ooplv
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+      - DB_SQLITE_VACUUM_ON_STARTUP=true
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
+      - N8N_WORKER_CONCURRENCY=10
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=10
+      # *** Database ***
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      # *** Queue ***
+      - QUEUE_BULL_REDIS_HOST=redis
+      - EXECUTIONS_MODE=queue
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    depends_on:
+      - redis
+      - n8n-worker
+      - postgres
+
+  redis:
+    image: redis:alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    networks: ['demo']
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+
+
+  n8n-worker:
+    image: n8nio/n8n:1.77.3
+    container_name: n8n-worker
+    restart: unless-stopped
+    networks: ['demo']
+    command: worker
+    environment:
+      # *** General ***
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      - N8N_WORKER_CONCURRENCY=10
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=10
+      - N8N_ENCRYPTION_KEY=MaGBhlks6ooplv
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - QUEUE_BULL_REDIS_HOST=redis
+      - EXECUTIONS_MODE=queue
+      - EXECUTIONS_TIMEOUT=3600
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+      - DB_SQLITE_VACUUM_ON_STARTUP=true
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
+      - NODE_OPTIONS=--max-old-space-size=1024
+      - N8N_METRICS=true
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      # *** Database ***
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8ndb
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+    depends_on:
+      - redis
+      - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  db-data:
+  n8n-data:
+  redis-data:
+
+networks:
+  demo:
+    driver: bridge
