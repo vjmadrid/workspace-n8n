@@ -52,9 +52,9 @@ services:
       - 8080:8080
       - 443:443
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./example01-traefik-data/letsencrypt:/letsencrypt
       - ./example01-traefik-data:/etc/traefik
-      - /var/run/docker.sock:/var/run/docker.sock
     command:
       #- "--log.level=DEBUG"
       - "--api.insecure=true"
